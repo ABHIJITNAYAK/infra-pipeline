@@ -1,37 +1,112 @@
-name: Reusable Infra Workflow
+name: CI
 
+# Controls when the workflow will run
 on:
   workflow_call:
-    inputs:
-      python-version:
-        required: true
-        type: string
-      package-manager:
-        required: true
-        type: string
-      install-args:
-        required: false
-        type: string
-        default: ""
-      
+  
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
+
+  # This workflow contains a single job called "build"
+  start:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      # Runs a single command using the runners shell
+      - name: start
+        run: echo job started at $(date)
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ inputs.python-version }}
+  lint:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: start
 
-      - name: Install dependencies
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
         run: |
-          if [ "${{ inputs.package-manager }}" == "pip" ]; then
-            pip install -r requirements.txt ${{ inputs.install-args }}
-          elif [ "${{ inputs.package-manager }}" == "poetry" ]; then
-            curl -sSL https://install.python-poetry.org | python3 - --version 1.4.2
-            export PATH="$HOME/.local/bin:$PATH"
-            poetry install ${{ inputs.install-args }}
-          fi
+          echo Run lint
+          echo running lint!
+
+  nag:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: start
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Runs a single command using the runners shell
+      - name: Run a nag
+        run: echo Running nag!
+
+
+
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    needs: [lint,nag]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        env:
+          NEEDS: ${{ toJSON(needs) }}      
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          echo "$NEEDS"
+
+  notify-success:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    if: ${{ always() && needs.build.result == 'success' }}
+    needs: build
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Runs a set of commands using the runners shell
+      - name: Run Success script
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo Notify Success
+          echo "$NEEDS"
+          
+
+  notify-failure:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    if: ${{ always() && needs.build.result ==  'failure' }}
+    needs: build
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          echo "$NEEDS"
+
+      
