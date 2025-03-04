@@ -71,6 +71,7 @@ jobs:
           NEEDS: ${{ toJSON(needs) }}      
         run: |
           echo Add other actions to build,
+          ls -lta
           echo test, and deploy your project.
           echo "$NEEDS"
 

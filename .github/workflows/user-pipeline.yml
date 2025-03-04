@@ -9,5 +9,5 @@ on:
       - main
 
 jobs:
-  call-reusable-workflow:
+  build-infra:
     uses: ./.github/workflows/reusable-infra-pipeline.yml
